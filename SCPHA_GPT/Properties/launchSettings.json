@@ -27,5 +27,16 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
+  },
+  "Logging": {
+    "LogLevel": { // No provider, LogLevel applies to all the enabled providers.
+      "Default": "Debug",
+    },
+    "Console": {
+      "IncludeScopes": true,
+      "LogLevel": {
+        "Default": "Debung"
+      }
+    }
   }
 }
