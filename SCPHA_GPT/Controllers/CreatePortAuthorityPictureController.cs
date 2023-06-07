@@ -1,27 +1,30 @@
 using Microsoft.AspNetCore.Mvc;
 using SCPHA_GPT.Interfaces;
+using SCPHA_GPT.Persistence;
 using System;
 
 namespace SCPHA_GPT.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class SCPHAGPTController : ControllerBase
+    public class CreatePortAuthorityPictureController : ControllerBase
     {
 
-        private readonly ILogger<SCPHAGPTController> _logger;
+        private readonly ILogger<CreatePortAuthorityPictureController> _logger;
         private readonly IChatGPT chatGpt;
         private readonly IDallE2 dallE2;
+        private readonly SCPHAContext dbContext;
 
-        public SCPHAGPTController(ILogger<SCPHAGPTController> logger, IChatGPT chatGpt, IDallE2 dallE2)
+        public CreatePortAuthorityPictureController(ILogger<CreatePortAuthorityPictureController> logger, IChatGPT chatGpt, IDallE2 dallE2, SCPHAContext dbContext)
         {
             _logger = logger;
             this.chatGpt = chatGpt;
             this.dallE2 = dallE2;
+            this.dbContext = dbContext;
         }
 
-        [HttpGet(Name = "GetSCPHAGPT")]
-        public async Task<IEnumerable<SCHPAGPT>> Get(string mood)
+        [HttpGet(Name = "CreatePicture")]
+        public async Task<IEnumerable<GeneratedPortAuthorityImage>> Create(string mood)
         {
             _logger.LogDebug($"Generating description for mood: {mood}...");
             var descriptions = await chatGpt.Generate(mood);
@@ -41,9 +44,16 @@ namespace SCPHA_GPT.Controllers
                 });
 
             var allResults = await Task.WhenAll(imageTasks);
-            return allResults.SelectMany(_ => _.Image.Any()
-            ? _.Image.Select(uri => new SCHPAGPT { ImageUri = new Uri(uri), Prompt = _.Description, Error = _.Error })
-            : new []{new SCHPAGPT { Prompt = _.Description, Error = _.Error }});
+            var retVal =  allResults.SelectMany(_ => _.Image.Any()
+                ? _.Image.Select(uri => new GeneratedPortAuthorityImage { RequestTime = DateTime.UtcNow, ImageUri = new Uri(uri), Prompt = _.Description, Error = _.Error })
+                : new []{new GeneratedPortAuthorityImage { Prompt = _.Description, Error = _.Error }}
+                ).ToList();
+
+
+            await dbContext.Images.AddRangeAsync(retVal);
+            await dbContext.SaveChangesAsync();
+
+            return retVal;
         }
     }
 }

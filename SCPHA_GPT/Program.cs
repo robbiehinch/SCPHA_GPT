@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using OpenAI;
 using SCPHA_GPT.Interfaces;
+using SCPHA_GPT.Persistence;
 using SCPHA_GPT.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,8 @@ builder.Services.AddSingleton<OpenAIClient>(new OpenAIClient(openAiAuthenticatio
 
 builder.Services.AddScoped<IChatGPT, SCPHADescriptionGenerator>();
 builder.Services.AddScoped<IDallE2, DallE2>();
+
+builder.Services.AddSingleton<SCPHAContext>(new SCPHAContext());
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
